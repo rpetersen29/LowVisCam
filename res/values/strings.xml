@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">LowVisCam</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="button_reverse_cam">Reverse Camera</string>
+    <string name="button_capture">Capture</string>
+	<string name="action_gallery">Image Gallery</string>
+	<string name="action_about">About</string>	
+	
+</resources>
