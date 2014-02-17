@@ -11,7 +11,9 @@ import android.R.id;
 import android.hardware.Camera;
 import android.hardware.Camera.Face;
 import android.hardware.Camera.PictureCallback;
+import android.hardware.Camera.ShutterCallback;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.media.SoundPool;
 import android.media.SoundPool.OnLoadCompleteListener;
 import android.net.Uri;
@@ -19,6 +21,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -85,8 +88,8 @@ public class MainActivity extends Activity {
         	             */
         	            if (faces.length > 1){
         	            	for (int i = 0; i < faces.length; i++){
-        	            		totalY = totalY + faces[0].rect.centerY();
-        	            		totalX = totalX + faces[0].rect.centerX();
+        	            		totalY = totalY + faces[i].rect.centerY();
+        	            		totalX = totalX + faces[i].rect.centerX();
         	            	}
         	            	yCenter = totalY/faces.length;
         	            	xCenter = totalX/faces.length;
@@ -168,7 +171,7 @@ public class MainActivity extends Activity {
                 @Override
                 public void onClick(View v) {
                     // get an image from the camera
-                    mCamera.takePicture(null, null, mPicture);
+                    mCamera.takePicture(shutterCallback, null, mPicture);
                     
                     // wait so picture saves
                     // need to revise to wait for the callbacks to provide the actual image data
@@ -216,6 +219,16 @@ public class MainActivity extends Activity {
         }
     }
     
+    // Plays camera snap sound
+    private final ShutterCallback shutterCallback = new ShutterCallback() {
+        public void onShutter() {
+            AudioManager mgr = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            mgr.playSoundEffect(AudioManager.FLAG_PLAY_SOUND);
+        }
+    };
+    
+    
+    // Saves picture
     private PictureCallback mPicture = new PictureCallback() {
 
         @Override
@@ -327,9 +340,9 @@ public class MainActivity extends Activity {
         // Handle presses on the action bar items
         switch (item.getItemId()) {
             case R.id.action_gallery:
-            	/*Intent myIntent = new Intent(CurrentActivity.this, NextActivity.class);
-            	myIntent.putExtra("key", value); //Optional parameters
-            	CurrentActivity.this.startActivity(myIntent);*/
+            	Intent myIntent = new Intent(MainActivity.this, GalleryActivity.class);
+            	//myIntent.putExtra("key", value); //Optional parameters
+            	MainActivity.this.startActivity(myIntent);
                 return true;
             case R.id.action_settings:
                 

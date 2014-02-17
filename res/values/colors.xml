@@ -3,4 +3,14 @@
     <color name="red">#FF0000</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
+    
+    <!-- Gradient start color of the overlay on the coupon image -->
+    <color name="overlay_bg_color">#CC000000</color>
+
+    <!-- Background color of the app -->
+    <color name="bg_color">#F8BBD0</color>
+
+    <!-- Pressed state color for a coupon -->
+    <color name="touch_overlay_bg_color">#33999999</color>
+    
 </resources>
