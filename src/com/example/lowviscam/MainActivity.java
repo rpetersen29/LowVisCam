@@ -1,5 +1,6 @@
 package com.example.lowviscam;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -7,27 +8,36 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import android.R.id;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.hardware.Camera;
 import android.hardware.Camera.Face;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.ShutterCallback;
 import android.media.AudioManager;
+import android.media.ExifInterface;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
 import android.media.SoundPool.OnLoadCompleteListener;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.util.Log;
+import android.view.Display;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.Surface;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.Toast;
@@ -47,6 +57,12 @@ public class MainActivity extends Activity {
 	int loop;
 	SoundPool soundPool;
 	int soundID;
+	
+	// Tag global variable
+	String tagText;
+	
+	//Picture location global
+	File pictureFile;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -164,34 +180,74 @@ public class MainActivity extends Activity {
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(mPreview);
         
+        //
+        
+        
         // Add a listener to the Capture button
         ImageButton captureButton = (ImageButton) findViewById(R.id.button_capture);
         captureButton.setOnClickListener(
             new View.OnClickListener() {
                 @Override
-                public void onClick(View v) {
+                public void onClick(final View v) {
                     // get an image from the camera
                     mCamera.takePicture(shutterCallback, null, mPicture);
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    // Set dialog properties
+                    final EditText tag = new EditText(MainActivity.this);
+                    builder.setMessage("Enter the image tag below")		//R.string.dialog_message
+                    	.setTitle("Set Image Tag")
+                    	.setView(tag);
                     
-                    // wait so picture saves
+                    // Add the buttons
+                    builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                               public void onClick(DialogInterface dialog, int id) {
+                                   	// User clicked OK button
+                            	   	tagText = tag.getText().toString();
+                            	   	//Log.d(TAG, tagText);
+                            	   	// Add image tag;
+									try {
+										ExifInterface exif = new ExifInterface(pictureFile.getPath());
+										exif.setAttribute("UserComment", tagText);
+										exif.saveAttributes();
+									} catch (IOException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+                                    
+                               		dialog.cancel();
+                               		mCamera.startPreview();
+                               }
+                           });
+                    builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                               public void onClick(DialogInterface dialog, int id) {
+                                   	// User cancelled the dialog
+                               		dialog.cancel();
+                               		mCamera.startPreview();
+                               }
+                           });
+                    
+                    AlertDialog dialog = builder.create();
+                    // wait so picture shows
                     // need to revise to wait for the callbacks to provide the actual image data
                     Thread thread = new Thread() {
                         @Override
                         public void run() {
                             try {
                                 synchronized (this) {
-                                    wait(3000);
+                                    wait(1000);
                                 }
                             } catch (InterruptedException ex) {
                         }
 
                         // TODO
-                        //TO RUN AFTER 3 SECONDS
-                            mCamera.startPreview();
+                        //TO RUN AFTER 1 SECONDS
+
                         }
                         };
 
                         thread.start();
+                    dialog.show();
+                   
                 }
             }
         );
@@ -219,6 +275,7 @@ public class MainActivity extends Activity {
         }
     }
     
+    
     // Plays camera snap sound
     private final ShutterCallback shutterCallback = new ShutterCallback() {
         public void onShutter() {
@@ -234,16 +291,45 @@ public class MainActivity extends Activity {
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
 
-            File pictureFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
+            pictureFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
             if (pictureFile == null){
                 Log.d(TAG, "Error creating media file, check storage permissions.");
                 return;
             }
 
             try {
+            	/*BitmapFactory.Options bounds = new BitmapFactory.Options();
+                bounds.inJustDecodeBounds = true;
+
+                Bitmap bm = BitmapFactory.decodeFile(pictureFile.getPath(), bounds);
+            	Bitmap original = BitmapFactory.decodeByteArray(data , 0, data.length);
+                Bitmap resized = Bitmap.createScaledBitmap(original, bm.getWidth(), bm.getHeight(), false);
+                     
+                ByteArrayOutputStream blob = new ByteArrayOutputStream();
+                resized.compress(Bitmap.CompressFormat.JPEG, 100, blob);
+             
+                data =  blob.toByteArray();*/
+                
                 FileOutputStream fos = new FileOutputStream(pictureFile);
                 fos.write(data);
                 fos.close();
+                
+                //rotate image
+                /*BitmapFactory.Options bounds = new BitmapFactory.Options();
+                bounds.inJustDecodeBounds = true;
+
+                Bitmap bm = BitmapFactory.decodeFile(pictureFile.getPath(), bounds);
+                
+                String orientString = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
+                int orientation = orientString != null ? Integer.parseInt(orientString) : ExifInterface.ORIENTATION_NORMAL;
+                int rotationAngle = 0;
+                if (orientation == ExifInterface.ORIENTATION_ROTATE_90) rotationAngle = 90;
+                if (orientation == ExifInterface.ORIENTATION_ROTATE_180) rotationAngle = 180;
+                if (orientation == ExifInterface.ORIENTATION_ROTATE_270) rotationAngle = 270;
+				
+                Matrix matrix = new Matrix();
+                matrix.setRotate(rotationAngle);
+                Bitmap rotatedBitmap = Bitmap.createBitmap(bm, 0, 0, bounds.outWidth, bounds.outHeight, matrix, true);*/
             } catch (FileNotFoundException e) {
                 Log.d(TAG, "File not found: " + e.getMessage());
             } catch (IOException e) {

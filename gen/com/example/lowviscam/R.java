@@ -84,10 +84,12 @@ public final class R {
         public static final int button_capture=0x7f080005;
         public static final int button_reverse_cam=0x7f080004;
         public static final int button_share=0x7f080006;
+        public static final int cancel=0x7f08000b;
         public static final int hello_world=0x7f080003;
         public static final int image_gallery=0x7f080001;
+        public static final int ok=0x7f08000a;
         public static final int share_using=0x7f080009;
-        public static final int test=0x7f08000a;
+        public static final int test=0x7f08000c;
     }
     public static final class style {
         /** 

@@ -19,6 +19,7 @@ package com.example.lowviscam;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -36,6 +37,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,10 +73,16 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
         GridView gridView = (GridView) findViewById(R.id.grid);
 
         // Initialize the adapter with all the coupons. Set the adapter on the {@link GridView}.
-        gridView.setAdapter(new CouponAdapter(inflater, createAllCoupons()));
+        try {
+			gridView.setAdapter(new CouponAdapter(inflater, createAllCoupons()));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
         // Set a click listener for each picture in the grid
         gridView.setOnItemClickListener(this);
+        //gridView.setOnItemLongClickListener(this);
         //ImageButton shareButton = (ImageButton) findViewById(R.id.button_share);
         //shareButton.setOnClickListener(this);
     }
@@ -82,15 +90,27 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
     /**
      * Generate the list of all coupons.
      * @return The list of coupons.
+     * @throws IOException 
      */
-    private List<Coupon> createAllCoupons() {
+    private List<Coupon> createAllCoupons() throws IOException {
         // TODO: Customize this list of coupons for your personal use.
     	List<Coupon> coupons = new ArrayList<Coupon>();
     	File list[] = mediaStorageDir.listFiles();
-    	for( int i=0; i< list.length; i++){
+    	for( int i=list.length-1; i> -1; i--){
+    		
+    		//Get text tag
+    		String tag = "NA";
+    		try {
+				ExifInterface exif = new ExifInterface(list[i].getPath());
+				tag = exif.getAttribute("UserComment");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    		
 
-
-    		coupons.add(new Coupon("Walk in the park",
+    		
+			coupons.add(new Coupon(tag,
                     "Take a stroll in the flower garden", list[i].getName()));
         }
     	
@@ -119,12 +139,22 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
         //Intent shareIntent = new Intent();
         Intent shareIntent = ShareCompat.IntentBuilder.from(this)
         		.setText(getShareText(coupon))
-                //.setType("image/jpeg")
-                //.setStream(coupon.mImageUri)
+                .setType("image/jpeg")
+                .setStream(coupon.mImageUri)
                 .setChooserTitle(getString(R.string.share_using))
                 .createChooserIntent();
         startActivity(shareIntent);
     }
+    
+    /*@Override
+    public void onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+        // TODO Auto-generated method stub
+         Log.d("in onLongClick");
+         String str=listView.getItemAtPosition(index).toString();
+
+         Log.d("long click : " +str);
+        return true;
+    }*/
 
     /**
      * Create the share intent text based on the coupon title, subtitle, and whether or not
@@ -134,15 +164,8 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
      * @return string to be used in the share intent.
      */
     private String getShareText(Coupon coupon) {
-        // If there is no sender name, just use the coupon title and subtitle
-        if (TextUtils.isEmpty(SENDER_NAME)) {
-            //return getString(R.string.message_format_without_sender, coupon.mTitle, coupon.mSubtitle);
-        	return getString(R.string.test);
-        } else {
-            // Otherwise, use the other string template and pass in the {@link #SENDER_NAME} too
-            //return getString(R.string.message_format_with_sender, SENDER_NAME,coupon.mTitle, coupon.mSubtitle);
-        	return getString(R.string.test);
-        }
+        // Return image tag
+    	return coupon.mTitle;
     }
 
     /**
@@ -201,7 +224,6 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
 
             // Bind the data
             viewCache.mTitleView.setText(coupon.mTitle);
-            //viewCache.mSubtitleView.setText(coupon.mSubtitle);
             viewCache.mImageView.setImageURI(coupon.mImageUri);
 
             return result;
@@ -219,9 +241,6 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
         /** View that displays the title of the coupon */
         private final TextView mTitleView;
 
-        /** View that displays the subtitle of the coupon */
-        private final TextView mSubtitleView;
-
         /** View that displays the image associated with the coupon */
         private final ImageView mImageView;
 
@@ -232,7 +251,6 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
          */
         private ViewCache(View view) {
             mTitleView = (TextView) view.findViewById(R.id.title);
-            mSubtitleView = null;
             mImageView = (ImageView) view.findViewById(R.id.image);
         }
     }
@@ -245,9 +263,6 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
         /** Title of the coupon. */
         private final String mTitle;
 
-        /** Description of the coupon. */
-        private final String mSubtitle;
-
         /** Content URI of the image for the coupon. */
         private final Uri mImageUri;
 
@@ -258,18 +273,14 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
          * @param subtitleString is the description
          * @param imageAssetFilePath is the file path from the application's assets folder for
          *                           the image associated with this coupon
+         * @throws IOException 
          */
-        private Coupon(String titleString, String subtitleString, String imageAssetFilePath) {
-            mTitle = titleString;
-            mSubtitle = subtitleString;
-            //mImageUri = Uri.parse("content://" + AssetProvider.CONTENT_URI + "/" +
-                    //imageAssetFilePath);
+        private Coupon(String titleString, String subtitleString, String imageAssetFilePath) throws IOException {
+
             mImageUri = Uri.parse(mediaStorageDir.getPath() + "/" +
                     imageAssetFilePath);
+            ExifInterface exif = new ExifInterface(mImageUri.getPath());
+            mTitle = exif.getAttribute("UserComment");
         }
     }
 }
-
-/* 
- * Share Icon made by Elegant Themes from Flaticon.com
- */
