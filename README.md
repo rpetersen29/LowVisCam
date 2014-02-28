@@ -1,4 +1,4 @@
 LowVisCam
 =========
 
-Android Camera &amp; Voice Tagging Application for Low Vision and Blind users
+Android Camera &amp; Image Tagging Application for Low Vision and Blind users
