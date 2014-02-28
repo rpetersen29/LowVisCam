@@ -36,9 +36,14 @@
         <activity
             android:name="com.example.lowviscam.GalleryActivity"
             android:label="@string/image_gallery"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait" 
+            android:parentActivityName="com.example.lowviscam.MainActivity">
             <!-- configure this activity to use portrait orientation -->
-  
+  			
+        	<!-- Parent activity meta-data to support API level 7+ -->
+        	<meta-data
+            android:name="android.support.PARENT_ACTIVITY"
+            android:value="com.example.lowviscam.MainActivity" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

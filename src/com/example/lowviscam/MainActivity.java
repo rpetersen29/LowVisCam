@@ -24,6 +24,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -36,6 +37,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.Surface;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -49,6 +51,7 @@ public class MainActivity extends Activity {
 	private Camera mCamera;
     private CameraPreview mPreview;
     public static int cam = 1;
+    public static boolean isLight = true;
     
     //Initialized SoundPool Variables
     float leftVolume;
@@ -66,12 +69,20 @@ public class MainActivity extends Activity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        super.onCreate(savedInstanceState);	
+
+        if (isLight == false){
+        	setTheme(R.style.AppBaseThemeDark);
+        	setContentView(R.layout.activity_main_dark);
+        } else {
+        	setTheme(R.style.AppBaseTheme);
+        	setContentView(R.layout.activity_main);
+        }
 
         // Create an instance of Camera
         mCamera = getCameraInstance();
         mCamera.setDisplayOrientation(90);
+        showCamToast(cam);
         
         // Create Face Detection Listener
         mCamera.setFaceDetectionListener(new MyFaceDetectionListener(){
@@ -87,7 +98,7 @@ public class MainActivity extends Activity {
         	                    " Face 1 Location X: " + faces[0].rect.centerX() +
         	                    " Y: " + faces[0].rect.centerY() );*/
         	            // Toast says face detected
-        	            showToast(faces.length);
+        	        	showFaceToast(faces.length);
         	            
         	            // Distance from Center Calculations
         	            /* Camera Preview cut into 5 x 5 grid, farther left or right produces more beeps,
@@ -222,11 +233,14 @@ public class MainActivity extends Activity {
                                public void onClick(DialogInterface dialog, int id) {
                                    	// User cancelled the dialog
                                		dialog.cancel();
+                               		// TODO: enter something to delete photo
+                               		
                                		mCamera.startPreview();
                                }
                            });
                     
                     AlertDialog dialog = builder.create();
+                    
                     // wait so picture shows
                     // need to revise to wait for the callbacks to provide the actual image data
                     Thread thread = new Thread() {
@@ -234,19 +248,23 @@ public class MainActivity extends Activity {
                         public void run() {
                             try {
                                 synchronized (this) {
-                                    wait(1000);
+                                    wait(1500);
                                 }
                             } catch (InterruptedException ex) {
                         }
 
                         // TODO
-                        //TO RUN AFTER 1 SECONDS
+                        //TO RUN AFTER 1.5 SECONDS
 
                         }
                         };
 
                         thread.start();
                     dialog.show();
+                    //TODO: Bring up keyboard
+                    InputMethodManager inputMethodManager=(InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                    inputMethodManager.toggleSoftInputFromWindow(tag.getApplicationWindowToken(), InputMethodManager.SHOW_FORCED, 0);
+                    tag.requestFocus();
                    
                 }
             }
@@ -266,6 +284,7 @@ public class MainActivity extends Activity {
                 		cam = 1;
                 	}
                 	recreate();
+                	showCamToast(cam);
                 }
             }
         );
@@ -298,6 +317,7 @@ public class MainActivity extends Activity {
             }
 
             try {
+            	// TODO: change image size
             	/*BitmapFactory.Options bounds = new BitmapFactory.Options();
                 bounds.inJustDecodeBounds = true;
 
@@ -417,7 +437,11 @@ public class MainActivity extends Activity {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu items for use in the action bar
 	    MenuInflater inflater = getMenuInflater();
-	    inflater.inflate(R.menu.main, menu);
+	    if (isLight == true){
+	    	inflater.inflate(R.menu.main, menu);
+        } else {
+        	inflater.inflate(R.menu.main_dark, menu);
+        }
 	    return super.onCreateOptionsMenu(menu);
 	}
     
@@ -428,10 +452,17 @@ public class MainActivity extends Activity {
             case R.id.action_gallery:
             	Intent myIntent = new Intent(MainActivity.this, GalleryActivity.class);
             	//myIntent.putExtra("key", value); //Optional parameters
+            	myIntent.putExtra("isLight", isLight);
             	MainActivity.this.startActivity(myIntent);
                 return true;
-            case R.id.action_settings:
-                
+            case R.id.action_switch_contrast:
+                if (isLight == true){
+                	isLight = false;
+                	recreate();
+                } else {
+                	isLight = true;
+                    recreate();
+                }
                 return true;
             case R.id.action_about:
             	
@@ -441,7 +472,7 @@ public class MainActivity extends Activity {
         }
     }
     
-    public void showToast(int numFaces){
+    public void showFaceToast(int numFaces){
         Context context = getApplicationContext();
         CharSequence text = null;
         if (numFaces == 1){
@@ -450,6 +481,19 @@ public class MainActivity extends Activity {
         if (numFaces > 1){
         	char charNumFaces = (char) ('0' + numFaces);
         	text = charNumFaces + " Faces Detected";
+        }
+        int duration = Toast.LENGTH_SHORT;
+        final Toast toast = Toast.makeText(context, text, duration);
+        toast.show();
+    }
+    
+    public void showCamToast(int cam){
+        Context context = getApplicationContext();
+        CharSequence text = null;
+        if (cam == 1){
+        	text = "Back Facing Camera Selected";
+        } else {
+        	text = "Front Facing Camera Selected";
         }
         int duration = Toast.LENGTH_SHORT;
         final Toast toast = Toast.makeText(context, text, duration);

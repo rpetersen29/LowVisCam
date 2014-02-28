@@ -16,6 +16,7 @@
 
 package com.example.lowviscam;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -26,6 +27,9 @@ import android.os.Environment;
 import android.support.v4.app.ShareCompat;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -51,6 +55,8 @@ import java.util.List;
  * dialog with a pre-populated message based on the coupon text.
  */
 public class GalleryActivity extends Activity implements OnItemClickListener {
+	
+	Boolean isLight;
 
     // Name of person giving out these coupons. When the user clicks on a coupon and shares
     // to another app, this name will be part of the pre-populated text.
@@ -62,8 +68,16 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Set activity_main.xml to be the layout for this activity
+        isLight = getIntent().getExtras().getBoolean("isLight");
+        if (isLight == false){
+        	this.setTheme(R.style.AppBaseThemeDark);
+        } else {
+        	this.setTheme(R.style.AppBaseTheme);
+        }
         setContentView(R.layout.activity_gallery);
+        
+        ActionBar actionBar = getActionBar();
+        actionBar.setDisplayHomeAsUpEnabled(true);
 
         // Fetch the {@link LayoutInflater} service so that new views can be created
         LayoutInflater inflater = (LayoutInflater) getSystemService(
@@ -281,6 +295,33 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
                     imageAssetFilePath);
             ExifInterface exif = new ExifInterface(mImageUri.getPath());
             mTitle = exif.getAttribute("UserComment");
+        }
+    }
+    
+    @Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu items for use in the action bar
+	    MenuInflater inflater = getMenuInflater();
+	    if (isLight == true){
+	    	inflater.inflate(R.menu.gallery, menu);
+        } else {
+        	inflater.inflate(R.menu.gallery_dark, menu);
+        }
+	    return super.onCreateOptionsMenu(menu);
+	}
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle presses on the action bar items
+        switch (item.getItemId()) {
+            case R.id.action_search:
+                //openSearch();
+                return true;
+            case R.id.action_about:
+                
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 }

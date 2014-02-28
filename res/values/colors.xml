@@ -3,6 +3,7 @@
     <color name="red">#FF0000</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
+    <color name="yellow">#F5F500</color>
     
     <!-- Gradient start color of the overlay on the coupon image -->
     <color name="overlay_bg_color">#CC000000</color>

@@ -1,7 +1,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 	
 	<item android:id="@+id/action_gallery"
-          android:icon="@drawable/ic_action_picture"
+          android:icon="@drawable/ic_action_picture_yellow"
           android:title="@string/action_gallery"
           android:showAsAction="ifRoom" />
     
