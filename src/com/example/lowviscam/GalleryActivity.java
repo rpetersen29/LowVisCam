@@ -18,31 +18,50 @@ package com.example.lowviscam;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.SearchManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Typeface;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v4.app.ShareCompat;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.TextUtils;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SearchView;
+import android.widget.SearchView.OnQueryTextListener;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -56,7 +75,10 @@ import java.util.List;
  */
 public class GalleryActivity extends Activity implements OnItemClickListener {
 	
-	Boolean isLight;
+	public Boolean isLight;
+	public static Typeface mFace;
+	public int numSearchResults;
+	public String firstResult;
 
     // Name of person giving out these coupons. When the user clicks on a coupon and shares
     // to another app, this name will be part of the pre-populated text.
@@ -64,6 +86,8 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
     private static final String SENDER_NAME = "";
     static File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
               Environment.DIRECTORY_PICTURES), "LowVisCam");
+    File listTemp[] = mediaStorageDir.listFiles();
+    String[] tagList = new String[listTemp.length];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,7 +100,16 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
         }
         setContentView(R.layout.activity_gallery);
         
+        // Retrieve APHont font and apply it
+        mFace = Typeface.createFromAsset(getAssets(),"fonts/APHont-Regular_q15c.otf");
+        SpannableString s = new SpannableString("Image Gallery");
+        s.setSpan(new TypefaceSpan(this, "APHont-Bold_q15c.otf"), 0, s.length(),
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+     
+        // Update the action bar title with the TypefaceSpan instance
         ActionBar actionBar = getActionBar();
+        actionBar.setTitle(s);
+
         actionBar.setDisplayHomeAsUpEnabled(true);
 
         // Fetch the {@link LayoutInflater} service so that new views can be created
@@ -93,12 +126,55 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+        
 
         // Set a click listener for each picture in the grid
         gridView.setOnItemClickListener(this);
-        //gridView.setOnItemLongClickListener(this);
-        //ImageButton shareButton = (ImageButton) findViewById(R.id.button_share);
-        //shareButton.setOnClickListener(this);
+        gridView.setOnTouchListener(new OnSwipeTouchListener() {
+
+            public void onSwipeTop() {
+                //Toast.makeText(GalleryActivity.this, "top", Toast.LENGTH_SHORT).show();
+            }
+            public void onSwipeRight() {
+                //Toast.makeText(GalleryActivity.this, "right", Toast.LENGTH_SHORT).show();
+            }
+            public void onSwipeLeft() {
+                //Toast.makeText(GalleryActivity.this, "left", Toast.LENGTH_SHORT).show();
+            }
+            public void onSwipeBottom() {
+                //Toast.makeText(GalleryActivity.this, "bottom", Toast.LENGTH_SHORT).show();
+            }
+
+        });
+        gridView.setOnItemLongClickListener(new OnItemLongClickListener() {
+
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+            	// Find coupon that was clicked based off of position in adapter
+                Coupon coupon = (Coupon) parent.getItemAtPosition(position);
+                //Get absolutepath of image for adding.
+                File list[] = mediaStorageDir.listFiles();
+                File tmpFile = list[list.length-position-1];
+                String photoUri = coupon.mImageUri.toString();
+				try {
+					photoUri = MediaStore.Images.Media.insertImage(
+					        getContentResolver(), tmpFile.getAbsolutePath(), null, null);
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+                // Create share intent
+                Intent shareIntent = ShareCompat.IntentBuilder.from(GalleryActivity.this)
+                		.setText(coupon.mTitle)
+                        .setType("image/jpeg")
+                        .setStream(Uri.parse(photoUri))
+                        .setChooserTitle(getString(R.string.share_using))
+                        .createChooserIntent();
+                startActivity(shareIntent);
+
+                return true;
+            }
+        }); 
+
     }
 
     /**
@@ -124,8 +200,7 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
     		
 
     		
-			coupons.add(new Coupon(tag,
-                    "Take a stroll in the flower garden", list[i].getName()));
+			coupons.add(new Coupon(tag, list[i].getName()));
         }
     	
     	
@@ -134,6 +209,41 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
         return coupons;
     }
 
+    private List<Coupon> createSearchedCoupons(String query) throws IOException {
+        // TODO: Customize this list of coupons for your personal use.
+    	List<Coupon> coupons = new ArrayList<Coupon>();
+    	
+    	numSearchResults = 0;
+    	
+    	File list[] = mediaStorageDir.listFiles();
+    	
+    	int j=0;
+    	for( int i=list.length-1; i> -1; i--){
+    		
+    		//Get text tag
+    		String tag = "NA";
+    		try {
+				ExifInterface exif = new ExifInterface(list[i].getPath());
+				tag = exif.getAttribute("UserComment");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    		
+
+    		if (tag.toLowerCase().contains(query.toLowerCase())){
+    			coupons.add(new Coupon(tag, list[i].getName()));
+    			tagList[j] = tag;
+    			numSearchResults++;
+    			j++;
+    		}
+        }
+    	
+    	
+        // You can add a title, subtitle, and a photo (in the assets directory).
+        
+        return coupons;
+    }
     /**
      * Callback method for a when a coupon is clicked. A new share intent is created with the
      * coupon title. Then the user can select which app to share the content of the coupon with.
@@ -146,30 +256,15 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
      */
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        // Find coupon that was clicked based off of position in adapter
+    	// Find coupon that was clicked based off of position in adapter
         Coupon coupon = (Coupon) parent.getItemAtPosition(position);
-
-        // Create share intent
-        //Intent shareIntent = new Intent();
-        Intent shareIntent = ShareCompat.IntentBuilder.from(this)
-        		.setText(getShareText(coupon))
-                .setType("image/jpeg")
-                .setStream(coupon.mImageUri)
-                .setChooserTitle(getString(R.string.share_using))
-                .createChooserIntent();
-        startActivity(shareIntent);
+    	
+    	Intent intent = new Intent(this, ViewImage.class);
+    	/*myIntent.putExtra("key", value);*/
+        intent.putExtra("mImageUri", coupon.mImageUri.toString());
+    	GalleryActivity.this.startActivity(intent);
     }
     
-    /*@Override
-    public void onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-        // TODO Auto-generated method stub
-         Log.d("in onLongClick");
-         String str=listView.getItemAtPosition(index).toString();
-
-         Log.d("long click : " +str);
-        return true;
-    }*/
-
     /**
      * Create the share intent text based on the coupon title, subtitle, and whether or not
      * there is a {@link #SENDER_NAME}.
@@ -185,7 +280,7 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
     /**
      * Adapter for grid of coupons.
      */
-    private static class CouponAdapter extends BaseAdapter {
+    private class CouponAdapter extends BaseAdapter {
 
         private LayoutInflater mInflater;
         private List<Coupon> mAllCoupons;
@@ -238,7 +333,9 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
 
             // Bind the data
             viewCache.mTitleView.setText(coupon.mTitle);
-            viewCache.mImageView.setImageURI(coupon.mImageUri);
+            //viewCache.mImageView.setImageURI(coupon.mImageUri);
+            Bitmap bm = decodeSampledBitmapFromUri(coupon.mImageUri.toString(), 200, 200);
+            viewCache.mImageView.setImageBitmap(bm);
 
             return result;
         }
@@ -266,6 +363,8 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
         private ViewCache(View view) {
             mTitleView = (TextView) view.findViewById(R.id.title);
             mImageView = (ImageView) view.findViewById(R.id.image);
+            
+            mTitleView.setTypeface(mFace);
         }
     }
 
@@ -284,12 +383,11 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
          * Constructs a new {@link Coupon}.
          *
          * @param titleString is the title
-         * @param subtitleString is the description
          * @param imageAssetFilePath is the file path from the application's assets folder for
          *                           the image associated with this coupon
          * @throws IOException 
          */
-        private Coupon(String titleString, String subtitleString, String imageAssetFilePath) throws IOException {
+        private Coupon(String titleString, String imageAssetFilePath) throws IOException {
 
             mImageUri = Uri.parse(mediaStorageDir.getPath() + "/" +
                     imageAssetFilePath);
@@ -297,6 +395,44 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
             mTitle = exif.getAttribute("UserComment");
         }
     }
+    
+    public Bitmap decodeSampledBitmapFromUri(String path, int reqWidth, int reqHeight) {
+
+        Bitmap bm = null;
+        // First decode with inJustDecodeBounds=true to check dimensions
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(path, options);
+
+        // Calculate inSampleSize
+        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+
+        // Decode bitmap with inSampleSize set
+        options.inJustDecodeBounds = false;
+        bm = BitmapFactory.decodeFile(path, options); 
+
+        return bm;      
+    }
+
+    public int calculateInSampleSize(
+
+        BitmapFactory.Options options, int reqWidth, int reqHeight) {
+        // Raw height and width of image
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        int inSampleSize = 1;
+
+        if (height > reqHeight || width > reqWidth) {
+            if (width > height) {
+                inSampleSize = Math.round((float)height / (float)reqHeight);    
+            } else {
+                inSampleSize = Math.round((float)width / (float)reqWidth);      
+            }   
+        }
+
+        return inSampleSize;    
+    }
+    
     
     @Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -307,21 +443,98 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
         } else {
         	inflater.inflate(R.menu.gallery_dark, menu);
         }
-	    return super.onCreateOptionsMenu(menu);
+
+	    // Get the SearchView and set the searchable configuration
+	    SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+	    SearchView searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
+	    // Assumes current activity is the searchable activity
+	    searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+	    searchView.setIconifiedByDefault(false); // Do not iconify the widget; expand it by default
+	    searchView.setSubmitButtonEnabled(true);
+	    searchView.setOnQueryTextListener( new OnQueryTextListener() {
+	        @Override
+	        public boolean onQueryTextSubmit(String query) {
+	        	search(query);
+	        	// First image toast
+	        	String firstResult;
+	        	if (numSearchResults == 0){
+	        		firstResult = "No results found for  " +query+".";
+	        	} else{
+	        		firstResult = "The first image result is titled " +tagList[0];
+	        	}
+	        	Toast.makeText(GalleryActivity.this, firstResult, Toast.LENGTH_SHORT).show();
+	            return true;
+	        }
+
+	        @Override
+	        public boolean onQueryTextChange(String newText) {
+	            if ( TextUtils.isEmpty(newText)) {
+	                search("");
+	            }
+
+	            return true;
+	        }
+
+	        public void search(String query) {
+	        	// hide keyboard
+	            InputMethodManager inputManager = (InputMethodManager) GalleryActivity.this.getSystemService(Context.INPUT_METHOD_SERVICE);
+	            inputManager.hideSoftInputFromWindow(GalleryActivity.this.getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+	        	
+	        	// Fetch the {@link LayoutInflater} service so that new views can be created
+	            LayoutInflater inflater = (LayoutInflater) getSystemService(
+	                    Context.LAYOUT_INFLATER_SERVICE);
+
+	            // Find the {@link GridView} that was already defined in the XML layout
+	            GridView gridView = (GridView) findViewById(R.id.grid);
+	        	try {
+	    			gridView.setAdapter(new CouponAdapter(inflater, createSearchedCoupons(query)));
+	    		} catch (IOException e) {
+	    			// TODO Auto-generated catch block
+	    			e.printStackTrace();
+	    		}
+	        	
+	        	
+	        }
+
+	    });
+
+	    return true;
+	    //return super.onCreateOptionsMenu(menu);
 	}
+    
+    
     
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle presses on the action bar items
         switch (item.getItemId()) {
             case R.id.action_search:
-                //openSearch();
+
                 return true;
             case R.id.action_about:
-                
+            	// 1. Instantiate an AlertDialog.Builder with its constructor
+            	AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+            	// 2. Chain together various setter methods to set the dialog characteristics
+            	String aboutString = getResources().getString(R.string.dialog_message);
+            	SpannableString s = new SpannableString(aboutString);
+                s.setSpan(new TypefaceSpan(this, "APHont-Regular_q15c.otf"), 0, s.length(),
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            	builder.setMessage(s)
+            	       .setTitle(R.string.dialog_title)
+            	       .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+            	    	   public void onClick(DialogInterface dialog, int id) {
+            	    		   // User clicked OK button
+            	    	   }
+            	       });;
+
+            	// 3. Get the AlertDialog from create()
+            	AlertDialog dialog = builder.create();
+            	dialog.show();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
+
 }

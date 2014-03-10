@@ -11,6 +11,7 @@ import java.util.Date;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.graphics.Typeface;
 import android.hardware.Camera;
 import android.hardware.Camera.Face;
 import android.hardware.Camera.PictureCallback;
@@ -30,6 +31,8 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
@@ -42,6 +45,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
@@ -52,6 +56,8 @@ public class MainActivity extends Activity {
     private CameraPreview mPreview;
     public static int cam = 1;
     public static boolean isLight = true;
+    public static int orientation = 0;
+    public static Typeface  mFace;    
     
     //Initialized SoundPool Variables
     float leftVolume;
@@ -78,9 +84,21 @@ public class MainActivity extends Activity {
         	setTheme(R.style.AppBaseTheme);
         	setContentView(R.layout.activity_main);
         }
-
+        
+        // Retrieve APHont font and apply it
+        mFace = Typeface.createFromAsset(getBaseContext().getAssets(),"fonts/APHont-Bold_q15c.otf");
+        //textView.setTypeface(mFace);
+        SpannableString s = new SpannableString("LowVisCam");
+        s.setSpan(new TypefaceSpan(this, "APHont-Bold_q15c.otf"), 0, s.length(),
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+     
+        // Update the action bar title with the TypefaceSpan instance
+        ActionBar actionBar = getActionBar();
+        actionBar.setTitle(s);
+        
         // Create an instance of Camera
         mCamera = getCameraInstance();
+        
         mCamera.setDisplayOrientation(90);
         showCamToast(cam);
         
@@ -200,14 +218,27 @@ public class MainActivity extends Activity {
             new View.OnClickListener() {
                 @Override
                 public void onClick(final View v) {
+                	
+                	// get orientation
+                	if (cam == 1){
+                		orientation = getCameraOrientation(MainActivity.this, Camera.CameraInfo.CAMERA_FACING_BACK, mCamera);
+        	       	} else {
+        	       		orientation = getCameraOrientation(MainActivity.this, Camera.CameraInfo.CAMERA_FACING_FRONT, mCamera);
+        	       	}
+                	
                     // get an image from the camera
                     mCamera.takePicture(shutterCallback, null, mPicture);
+                    
                     final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    
                     // Set dialog properties
                     final EditText tag = new EditText(MainActivity.this);
+
+                    
                     builder.setMessage("Enter the image tag below")		//R.string.dialog_message
                     	.setTitle("Set Image Tag")
                     	.setView(tag);
+                    
                     
                     // Add the buttons
                     builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
@@ -218,6 +249,9 @@ public class MainActivity extends Activity {
                             	   	// Add image tag;
 									try {
 										ExifInterface exif = new ExifInterface(pictureFile.getPath());
+										if (tagText.matches("")){
+											tagText = "No Tag Added";
+										}
 										exif.setAttribute("UserComment", tagText);
 										exif.saveAttributes();
 									} catch (IOException e) {
@@ -226,10 +260,11 @@ public class MainActivity extends Activity {
 									}
                                     
                                		dialog.cancel();
+                               		Toast.makeText(MainActivity.this, "Picture Saved.", Toast.LENGTH_SHORT).show();
                                		mCamera.startPreview();
                                }
                            });
-                    builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    /*builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                                public void onClick(DialogInterface dialog, int id) {
                                    	// User cancelled the dialog
                                		dialog.cancel();
@@ -237,7 +272,7 @@ public class MainActivity extends Activity {
                                		
                                		mCamera.startPreview();
                                }
-                           });
+                           });*/
                     
                     AlertDialog dialog = builder.create();
                     
@@ -259,12 +294,12 @@ public class MainActivity extends Activity {
                         }
                         };
 
-                        thread.start();
+                    //thread.start();
                     dialog.show();
                     //TODO: Bring up keyboard
-                    InputMethodManager inputMethodManager=(InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-                    inputMethodManager.toggleSoftInputFromWindow(tag.getApplicationWindowToken(), InputMethodManager.SHOW_FORCED, 0);
-                    tag.requestFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(tag, InputMethodManager.SHOW_FORCED);
+
                    
                 }
             }
@@ -277,7 +312,7 @@ public class MainActivity extends Activity {
             new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    // restart activity with front facing camera
+                    // restart activity with opposite facing camera
                 	if ( cam == 1){
                 		cam = 2;
                 	} else {
@@ -311,6 +346,7 @@ public class MainActivity extends Activity {
         public void onPictureTaken(byte[] data, Camera camera) {
 
             pictureFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
+            Uri pictureFileURI = getOutputMediaFileUri(MEDIA_TYPE_IMAGE);
             if (pictureFile == null){
                 Log.d(TAG, "Error creating media file, check storage permissions.");
                 return;
@@ -329,8 +365,24 @@ public class MainActivity extends Activity {
                 resized.compress(Bitmap.CompressFormat.JPEG, 100, blob);
              
                 data =  blob.toByteArray();*/
+            	
+            	//Creates Portrait rotated image
+            	Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0,
+            			data.length);
+
+            	        int width = bitmap.getWidth();
+            	        int height = bitmap.getHeight();
+
+            	        FileOutputStream fos = new FileOutputStream(pictureFile);
+            	        
+            	        Matrix matrix = new Matrix();
+            	        matrix.postRotate(orientation);
+            	        Bitmap resizedBitmap = Bitmap.createBitmap(bitmap, 0, 0, width,
+            	            height, matrix, false);
+
+            	        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos); //Possibly change quality for sharing
                 
-                FileOutputStream fos = new FileOutputStream(pictureFile);
+            	// write data to disk
                 fos.write(data);
                 fos.close();
                 
@@ -338,8 +390,10 @@ public class MainActivity extends Activity {
                 /*BitmapFactory.Options bounds = new BitmapFactory.Options();
                 bounds.inJustDecodeBounds = true;
 
-                Bitmap bm = BitmapFactory.decodeFile(pictureFile.getPath(), bounds);
-                
+                Bitmap bm = BitmapFactory.decodeFile(pictureFileURI.getPath(), bounds);
+                width = bounds.outWidth;
+                height = bounds.outHeight;
+                ExifInterface exif = new ExifInterface(pictureFileURI.getPath());
                 String orientString = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
                 int orientation = orientString != null ? Integer.parseInt(orientString) : ExifInterface.ORIENTATION_NORMAL;
                 int rotationAngle = 0;
@@ -347,9 +401,13 @@ public class MainActivity extends Activity {
                 if (orientation == ExifInterface.ORIENTATION_ROTATE_180) rotationAngle = 180;
                 if (orientation == ExifInterface.ORIENTATION_ROTATE_270) rotationAngle = 270;
 				
-                Matrix matrix = new Matrix();
-                matrix.setRotate(rotationAngle);
-                Bitmap rotatedBitmap = Bitmap.createBitmap(bm, 0, 0, bounds.outWidth, bounds.outHeight, matrix, true);*/
+                Matrix matrix2 = new Matrix();
+                matrix2.setRotate(rotationAngle);
+                Bitmap rotatedBitmap = Bitmap.createBitmap(bm, 0, 0, width, height, matrix2, false);
+                rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);*/
+                
+                //Output orientation info to log
+                //Log.d("ImageRotation", orientString);
             } catch (FileNotFoundException e) {
                 Log.d(TAG, "File not found: " + e.getMessage());
             } catch (IOException e) {
@@ -357,6 +415,35 @@ public class MainActivity extends Activity {
             }
         }
     };
+    
+    
+    
+    public static int getCameraOrientation(Activity activity,
+            int cameraId, android.hardware.Camera camera) {
+        android.hardware.Camera.CameraInfo info =
+                new android.hardware.Camera.CameraInfo();
+        android.hardware.Camera.getCameraInfo(cameraId, info);
+        int rotation = activity.getWindowManager().getDefaultDisplay()
+                .getRotation();
+        int degrees = 0;
+        switch (rotation) {
+            case Surface.ROTATION_0: degrees = 0; break;
+            case Surface.ROTATION_90: degrees = 90; break;
+            case Surface.ROTATION_180: degrees = 180; break;
+            case Surface.ROTATION_270: degrees = 270; break;
+        }
+
+        int result;
+        // flips front facing: if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT)
+        // TODO: still need to rotate images
+        if (cam == 6) {
+            result = (info.orientation + degrees) % 360;
+            result = (360 - result) % 360;  // compensate the mirror
+        } else {  // back-facing
+            result = (info.orientation - degrees + 360) % 360;
+        }
+        return result;
+    }
     
 	/** A safe way to get an instance of the Camera object. */
 	public static Camera getCameraInstance(){
@@ -465,7 +552,26 @@ public class MainActivity extends Activity {
                 }
                 return true;
             case R.id.action_about:
-            	
+            	// 1. Instantiate an AlertDialog.Builder with its constructor
+            	AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+            	// 2. Chain together various setter methods to set the dialog characteristics
+            	String aboutString = getResources().getString(R.string.dialog_message);
+            	SpannableString s = new SpannableString(aboutString);
+                s.setSpan(new TypefaceSpan(this, "APHont-Regular_q15c.otf"), 0, s.length(),
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                
+            	builder.setMessage(s)
+            	       .setTitle(R.string.dialog_title)
+            	       .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+            	    	   public void onClick(DialogInterface dialog, int id) {
+            	    		   // User clicked OK button
+            	    	   }
+            	       });;
+
+            	// 3. Get the AlertDialog from create()
+            	AlertDialog dialog = builder.create();
+            	dialog.show();
             	return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -495,6 +601,7 @@ public class MainActivity extends Activity {
         } else {
         	text = "Front Facing Camera Selected";
         }
+        //text.setTypeface(mFace);
         int duration = Toast.LENGTH_SHORT;
         final Toast toast = Toast.makeText(context, text, duration);
         toast.show();

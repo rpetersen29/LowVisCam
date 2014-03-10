@@ -13,8 +13,42 @@
 	<string name="share_using">Share using</string>
 	<string name="ok">OK</string>
 	<string name="cancel">Cancel</string>
+	<string name="search_results">Search Results</string>
 	<string name="action_search">Search</string>
+	<string name="search_hint">Search images</string>
+	<string name="view_image">View Image</string>
 	
-	<string name="test">TEST</string>
+	
+	<string name="dialog_title">About LowVisCam</string>
+	<string name="dialog_message">
+	    Welcome to LowVisCam. LowViscam is a camera application specifically 
+	    designed for low vision and blind users. LowViscam is designed to allow 
+	    visually impaired persons the ability to frame their friends or themselves 
+	    in pictures using face detection software. In order to utilize the full functionality 
+	    of the face detection software, please use headphones while using this app. 
+	    You will receive audio feedback depending on the position of the face in the 
+	    camera frame. The farther left or right the face is in the frame, the more beeps you will 
+	    hear. The farther up or down the face is in the frame, the higher or lower the 
+	    pitch of those beeps will be. Beeps will also play in the left or right channels 
+	    of the headphones depending on the left or right positioning of the face. 
+	    For example, if a head is in the bottom left corner, you will hear 3 low pitch 
+	    beeps in the left headphone. If a head is positioned in the center on top you 
+	    will hear 1 high pitch beep in both headphones. A face in the perfect center will 
+	    receive a separate ding noise. Multiple faces in frame are calculated by the middle 
+	    point of all faces. 
+	    
+	    The image gallery is accessible by the image gallery button on the action bar. Each image 
+	    in the image gallery has two actions. A long click will open the share options for the 
+	    image. A single click will open that image in the image viewer. Left and 
+	    right swipes in the image viewer will show your other images.
+
+		There are two themes available for LowVisCam, white background with black text, and 
+		black background with yellow text. If at any time you want to change the 
+		theme, select the \'Switch Contrast\' button in the action overflow button.
+			    
+	    Simple enough right? You\'ll get used to it the more you use LowViscam. Have fun 
+	    taking pictures!
+	    
+	</string>
 	
 </resources>

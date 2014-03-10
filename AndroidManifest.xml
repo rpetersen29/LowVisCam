@@ -42,15 +42,49 @@
   			
         	<!-- Parent activity meta-data to support API level 7+ -->
         	<meta-data
-            android:name="android.support.PARENT_ACTIVITY"
-            android:value="com.example.lowviscam.MainActivity" />
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            	android:name="android.support.PARENT_ACTIVITY"
+            	android:value="com.example.lowviscam.MainActivity" />
+        	
+        	<meta-data android:name="android.app.searchable"
+                   android:resource="@xml/searchable"/>
+            
             
         </activity>
+        
+        <activity 
+            android:name="com.example.lowviscam.SearchResultsActivity" 
+            android:label="@string/search_results"
+            android:screenOrientation="portrait" 
+            android:parentActivityName="com.example.lowviscam.GalleryActivity">
+			<!-- configure this activity to use portrait orientation -->
+  			
+        	<!-- Parent activity meta-data to support API level 7+ -->
+        	<meta-data
+            android:name="android.support.PARENT_ACTIVITY"
+            android:value="com.example.lowviscam.GalleryActivity" />
+        	
+    		<intent-filter>
+        		<action android:name="android.intent.action.SEARCH" />
+    		</intent-filter>
+			<meta-data android:name="android.app.searchable"
+                   android:resource="@xml/searchable"/>
+		</activity>
+        <activity
+            android:name="com.example.lowviscam.ViewImage"
+            android:label="@string/view_image"
+            android:screenOrientation="portrait" 
+            android:parentActivityName="com.example.lowviscam.GalleryActivity">
+            <!-- configure this activity to use portrait orientation -->
+  			
+        	<!-- Parent activity meta-data to support API level 7+ -->
+        	<meta-data
+            android:name="android.support.PARENT_ACTIVITY"
+            android:value="com.example.lowviscam.GalleryActivity" />
+
+           
+            
+        </activity>
+
 
     </application>
 
