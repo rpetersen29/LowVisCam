@@ -462,7 +462,11 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
 	        	} else{
 	        		firstResult = "The first image result is titled " +tagList[0];
 	        	}
-	        	Toast.makeText(GalleryActivity.this, firstResult, Toast.LENGTH_SHORT).show();
+	        	
+	        	SpannableString s = new SpannableString(firstResult);
+	            s.setSpan(new TypefaceSpan(GalleryActivity.this, "APHont-Regular_q15c.otf"), 0, s.length(),
+	                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+	        	Toast.makeText(GalleryActivity.this, s, Toast.LENGTH_LONG).show();
 	            return true;
 	        }
 
@@ -517,11 +521,16 @@ public class GalleryActivity extends Activity implements OnItemClickListener {
 
             	// 2. Chain together various setter methods to set the dialog characteristics
             	String aboutString = getResources().getString(R.string.dialog_message);
-            	SpannableString s = new SpannableString(aboutString);
-                s.setSpan(new TypefaceSpan(this, "APHont-Regular_q15c.otf"), 0, s.length(),
+            	String titleString = getResources().getString(R.string.dialog_title);
+            	SpannableString sa = new SpannableString(aboutString);
+            	SpannableString st = new SpannableString(titleString);
+            	sa.setSpan(new TypefaceSpan(this, "APHont-Regular_q15c.otf"), 0, sa.length(),
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            	builder.setMessage(s)
-            	       .setTitle(R.string.dialog_title)
+            	st.setSpan(new TypefaceSpan(this, "APHont-Bold_q15c.otf"), 0, st.length(),
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                
+            	builder.setMessage(sa)
+            	       .setTitle(st)
             	       .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
             	    	   public void onClick(DialogInterface dialog, int id) {
             	    		   // User clicked OK button

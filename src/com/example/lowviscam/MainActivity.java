@@ -86,7 +86,7 @@ public class MainActivity extends Activity {
         }
         
         // Retrieve APHont font and apply it
-        mFace = Typeface.createFromAsset(getBaseContext().getAssets(),"fonts/APHont-Bold_q15c.otf");
+        //mFace = Typeface.createFromAsset(getBaseContext().getAssets(),"fonts/APHont-Bold_q15c.otf");
         //textView.setTypeface(mFace);
         SpannableString s = new SpannableString("LowVisCam");
         s.setSpan(new TypefaceSpan(this, "APHont-Bold_q15c.otf"), 0, s.length(),
@@ -260,7 +260,11 @@ public class MainActivity extends Activity {
 									}
                                     
                                		dialog.cancel();
-                               		Toast.makeText(MainActivity.this, "Picture Saved.", Toast.LENGTH_SHORT).show();
+                  
+                                	SpannableString s = new SpannableString("Picture Saved.");
+                                    s.setSpan(new TypefaceSpan(MainActivity.this, "APHont-Regular_q15c.otf"), 0, s.length(),
+                                            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                               		Toast.makeText(MainActivity.this, s, Toast.LENGTH_SHORT).show();
                                		mCamera.startPreview();
                                }
                            });
@@ -353,18 +357,6 @@ public class MainActivity extends Activity {
             }
 
             try {
-            	// TODO: change image size
-            	/*BitmapFactory.Options bounds = new BitmapFactory.Options();
-                bounds.inJustDecodeBounds = true;
-
-                Bitmap bm = BitmapFactory.decodeFile(pictureFile.getPath(), bounds);
-            	Bitmap original = BitmapFactory.decodeByteArray(data , 0, data.length);
-                Bitmap resized = Bitmap.createScaledBitmap(original, bm.getWidth(), bm.getHeight(), false);
-                     
-                ByteArrayOutputStream blob = new ByteArrayOutputStream();
-                resized.compress(Bitmap.CompressFormat.JPEG, 100, blob);
-             
-                data =  blob.toByteArray();*/
             	
             	//Creates Portrait rotated image
             	Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0,
@@ -385,26 +377,6 @@ public class MainActivity extends Activity {
             	// write data to disk
                 fos.write(data);
                 fos.close();
-                
-                //rotate image
-                /*BitmapFactory.Options bounds = new BitmapFactory.Options();
-                bounds.inJustDecodeBounds = true;
-
-                Bitmap bm = BitmapFactory.decodeFile(pictureFileURI.getPath(), bounds);
-                width = bounds.outWidth;
-                height = bounds.outHeight;
-                ExifInterface exif = new ExifInterface(pictureFileURI.getPath());
-                String orientString = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
-                int orientation = orientString != null ? Integer.parseInt(orientString) : ExifInterface.ORIENTATION_NORMAL;
-                int rotationAngle = 0;
-                if (orientation == ExifInterface.ORIENTATION_ROTATE_90) rotationAngle = 90;
-                if (orientation == ExifInterface.ORIENTATION_ROTATE_180) rotationAngle = 180;
-                if (orientation == ExifInterface.ORIENTATION_ROTATE_270) rotationAngle = 270;
-				
-                Matrix matrix2 = new Matrix();
-                matrix2.setRotate(rotationAngle);
-                Bitmap rotatedBitmap = Bitmap.createBitmap(bm, 0, 0, width, height, matrix2, false);
-                rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);*/
                 
                 //Output orientation info to log
                 //Log.d("ImageRotation", orientString);
@@ -557,12 +529,16 @@ public class MainActivity extends Activity {
 
             	// 2. Chain together various setter methods to set the dialog characteristics
             	String aboutString = getResources().getString(R.string.dialog_message);
-            	SpannableString s = new SpannableString(aboutString);
-                s.setSpan(new TypefaceSpan(this, "APHont-Regular_q15c.otf"), 0, s.length(),
+            	String titleString = getResources().getString(R.string.dialog_title);
+            	SpannableString sa = new SpannableString(aboutString);
+            	SpannableString st = new SpannableString(titleString);
+            	sa.setSpan(new TypefaceSpan(this, "APHont-Regular_q15c.otf"), 0, sa.length(),
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            	st.setSpan(new TypefaceSpan(this, "APHont-Bold_q15c.otf"), 0, st.length(),
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 
-            	builder.setMessage(s)
-            	       .setTitle(R.string.dialog_title)
+            	builder.setMessage(sa)
+            	       .setTitle(st)
             	       .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
             	    	   public void onClick(DialogInterface dialog, int id) {
             	    		   // User clicked OK button
@@ -589,7 +565,11 @@ public class MainActivity extends Activity {
         	text = charNumFaces + " Faces Detected";
         }
         int duration = Toast.LENGTH_SHORT;
-        final Toast toast = Toast.makeText(context, text, duration);
+        
+    	SpannableString s = new SpannableString(text);
+        s.setSpan(new TypefaceSpan(this, "APHont-Regular_q15c.otf"), 0, s.length(),
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        final Toast toast = Toast.makeText(context, s, duration);
         toast.show();
     }
     
@@ -603,7 +583,11 @@ public class MainActivity extends Activity {
         }
         //text.setTypeface(mFace);
         int duration = Toast.LENGTH_SHORT;
-        final Toast toast = Toast.makeText(context, text, duration);
+        
+    	SpannableString s = new SpannableString(text);
+        s.setSpan(new TypefaceSpan(this, "APHont-Regular_q15c.otf"), 0, s.length(),
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        final Toast toast = Toast.makeText(context, s, duration);
         toast.show();
     }
 

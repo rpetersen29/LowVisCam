@@ -14,6 +14,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.app.Activity;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -107,7 +109,10 @@ public class ViewImage extends Activity implements OnItemClickListener {
 	            }
 	            public void onSwipeRight() {
 	            	if (position == 0){
-	            		Toast.makeText(ViewImage.this, "Beginning of list.", Toast.LENGTH_SHORT).show();
+	            		SpannableString s = new SpannableString("Beginning of list.");
+	    	            s.setSpan(new TypefaceSpan(ViewImage.this, "APHont-Regular_q15c.otf"), 0, s.length(),
+	    	                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+	            		Toast.makeText(ViewImage.this, s, Toast.LENGTH_SHORT).show();
 	            	} else {
 	            		mImageView = (ImageView) findViewById(R.id.image);
 	            		Bitmap bm = decodeSampledBitmapFromUri(imageURIs.get(position-1), 400, 800);
@@ -122,7 +127,10 @@ public class ViewImage extends Activity implements OnItemClickListener {
 	            }
 	            public void onSwipeLeft() {
 	            	if (position == list.length-1){
-	            		Toast.makeText(ViewImage.this, "End of list.", Toast.LENGTH_SHORT).show();
+	            		SpannableString s = new SpannableString("End of list.");
+	    	            s.setSpan(new TypefaceSpan(ViewImage.this, "APHont-Regular_q15c.otf"), 0, s.length(),
+	    	                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+	            		Toast.makeText(ViewImage.this, s, Toast.LENGTH_SHORT).show();
 	            	} else {
 	            		mImageView = (ImageView) findViewById(R.id.image);
 	            		Bitmap bm = decodeSampledBitmapFromUri(imageURIs.get(position+1), 400, 800);
