@@ -86,8 +86,6 @@ public class MainActivity extends Activity {
         }
         
         // Retrieve APHont font and apply it
-        //mFace = Typeface.createFromAsset(getBaseContext().getAssets(),"fonts/APHont-Bold_q15c.otf");
-        //textView.setTypeface(mFace);
         SpannableString s = new SpannableString("LowVisCam");
         s.setSpan(new TypefaceSpan(this, "APHont-Bold_q15c.otf"), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -406,9 +404,10 @@ public class MainActivity extends Activity {
         }
 
         int result;
-        // flips front facing: if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT)
+        // flips front facing: if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) 
+        // changed to if (cam == 6) so it never goes there
         // TODO: still need to rotate images
-        if (cam == 6) {
+        if (cam == 6) { //should be for front-facing
             result = (info.orientation + degrees) % 360;
             result = (360 - result) % 360;  // compensate the mirror
         } else {  // back-facing
